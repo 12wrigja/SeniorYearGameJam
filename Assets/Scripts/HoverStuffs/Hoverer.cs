@@ -4,11 +4,16 @@ using System.Collections;
 public class Hoverer : MonoBehaviour {
     public Transform[] hoverPoints;
     public GravityManager gravityManager;
+    [Tooltip(@"This is the height that the hoverer will attempt to be above the ground.")]
     public float hoverHeight;
+    [Tooltip(@"This is the maximum distance from the surface at which hover forces will be applied")]
     public float maxHoverDist = float.PositiveInfinity;
+    [Tooltip("This is the spring constant.  it is inverted (you should provide a negative number).\nJUSTIN: this is the number you want to fiddle with.")]
     public float k;
     //public float b;
+    [Tooltip("The rigidbody that forces should be applied to")]
     public Rigidbody rgb;
+    [Tooltip("For each hover point, the angle between it's forward axis and the current gravity direction is calculated.  If it exceeds this value, hover physics are not calculated for that point.")]
     [Range(0,180)]
     public float cutoffAngle = 90f;
 
