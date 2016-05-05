@@ -1,53 +1,38 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class Track : MonoBehaviour
 {
-	
-	public TrackChunk trackStartPrefab;
-
 	public TrackChunk[] trackSegmentPrefabs;
-
-	public TrackChunk trackFinishPrefab;
 
 	public int trackLength = 1;
 
 	// Use this for initialization
 	void Start ()
 	{
-		TrackChunk startChunk = Instantiate (trackStartPrefab) as TrackChunk;
-		if (startChunk == null) {
-			Debug.LogError ("The track start chunk does not have a track chunk component.");
-			return;
-		}
-
-		if (startChunk.GetOpenGates ().Count != 1) {
-			Debug.LogError ("The track start chunk does not have exactly one open gate.");
-		}
-
-		TrackChunk endChunk = Instantiate (trackFinishPrefab) as TrackChunk;
-		if (endChunk == null) {
-			Debug.LogError ("The track end chunk does not have a track chunk component.");
-			return;
-		}
-
-		if (endChunk.GetOpenGates ().Count != 1) {
-			Debug.LogError ("The track end chunk does not have exactly one open gate.");
-		}
-
 		for (int i = 0; i < trackSegmentPrefabs.Length; i++) {
 			TrackChunk obj = trackSegmentPrefabs [i];
-			if (obj.GetOpenGates ().Count != 2) {
-				Debug.LogError ("The track chunk in index " + i + " does not have exactly two open gate.");
-				return;
+			if (obj != null) {
+				if (!obj.canBeStart && !obj.canBeEnd && obj.GetOpenGates ().Count != 2) {
+					Debug.LogError ("The track chunk in index " + i + " does not have exactly two open gates.");
+					return;
+				} else if ((obj.canBeStart || obj.canBeEnd) && obj.GetOpenGates ().Count != 1) {
+					Debug.LogError ("The track chunk in index " + i + " has more or less than 1 open gate. Start or end tiles need to have exactly one open gate.");
+				}
 			}
 		}
 
-		startChunk.transform.position = this.transform.position;
-		startChunk.transform.rotation = this.transform.rotation;
-		startChunk.transform.SetParent (this.transform);
 
+		List<TrackChunk> potentialStartTiles = trackSegmentPrefabs.Where ((chunk) => chunk != null && chunk.canBeStart).ToList ();
+		if (potentialStartTiles.Count == 0) {
+			Debug.LogError ("Unable to begin track - no potential start tiles.");
+			return;
+		}
+		TrackChunk startChunk = Instantiate(potentialStartTiles [Random.Range (0, potentialStartTiles.Count - 1)]) as TrackChunk;
+		startChunk.transform.SetParent (this.transform);
+		startChunk.name = "Start Track Segment";
 		TrackChunk currentChunk = startChunk;
 		Direction previousDirection = startChunk.GetOpenGates () [0].GateDirection;
 		for (int i = 0; i < trackLength; i++) {
@@ -55,11 +40,15 @@ public class Track : MonoBehaviour
 			Direction opposingDirection = previousDirection.GetOpposite ();
 			List<TrackChunk> availableTrackParts = new List<TrackChunk> ();
 			foreach (TrackChunk obj in trackSegmentPrefabs) {
-				if (obj.GetGateForDirection (opposingDirection) != GateSize.CLOSED) {
+				if (obj != null && obj.GetOpenGates().Count > 1 && obj.GetGateForDirection (opposingDirection) != GateSize.CLOSED) {
 					availableTrackParts.Add (obj);
-					break;
 				}
 			}
+			if (availableTrackParts.Count == 0) {
+				Debug.LogError ("No available parts.");
+				return;
+			}
+			Debug.Log ("Parts available for segment " + i + ": " + availableTrackParts.Count);
 			TrackChunk selectedTrackPart = Instantiate (availableTrackParts [Random.Range (0, availableTrackParts.Count - 1)]) as TrackChunk;
 			TrackChunk nextChunk = selectedTrackPart.GetComponent<TrackChunk> ();
 			selectedTrackPart.transform.SetParent (this.transform);
@@ -72,7 +61,15 @@ public class Track : MonoBehaviour
 			Direction exitDirection = currentChunk.getExitDirection (opposingDirection);
 			previousDirection = exitDirection;
 		}
+
+		List<TrackChunk> potentialEndTiles = trackSegmentPrefabs.Where ((chunk) => chunk != null && chunk.canBeEnd && chunk.GetGateForDirection(previousDirection.GetOpposite ()) != GateSize.CLOSED).ToList ();
+		if (potentialEndTiles.Count == 0) {
+			Debug.Log ("Unable to end track - no potential end tiles.");
+			return;
+		}
+		TrackChunk endChunk = Instantiate(potentialEndTiles [Random.Range (0, potentialEndTiles.Count - 1)]) as TrackChunk;
 		endChunk.PositionSideAtPoint (currentChunk.GetGatePosition (previousDirection), endChunk.GetOpenGates () [0].GateDirection);
+		endChunk.name = "End Track Segment";
 		endChunk.transform.SetParent (this.transform);
 	}
 }

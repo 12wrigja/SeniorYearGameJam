@@ -15,6 +15,9 @@ public class TrackChunk : MonoBehaviour
 	public GateSize ForwardGate;
 	public GateSize BackGate;
 
+	public bool canBeStart = false;
+	public bool canBeEnd = false;
+
 	public GateSize GetGateForDirection (Direction dir)
 	{
 		switch (dir) {
