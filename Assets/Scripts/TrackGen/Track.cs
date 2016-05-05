@@ -11,7 +11,7 @@ public class Track : MonoBehaviour
 
 	public TrackChunk trackFinishPrefab;
 
-	public int trackLength = 10;
+	public int trackLength = 1;
 
 	// Use this for initialization
 	void Start ()
@@ -36,7 +36,7 @@ public class Track : MonoBehaviour
 			Debug.LogError ("The track end chunk does not have exactly one open gate.");
 		}
 
-		for(int i=0; i<trackSegmentPrefabs.Length; i++) {
+		for (int i = 0; i < trackSegmentPrefabs.Length; i++) {
 			TrackChunk obj = trackSegmentPrefabs [i];
 			if (obj.GetOpenGates ().Count != 2) {
 				Debug.LogError ("The track chunk in index " + i + " does not have exactly two open gate.");
@@ -49,7 +49,7 @@ public class Track : MonoBehaviour
 		startChunk.transform.SetParent (this.transform);
 
 		TrackChunk currentChunk = startChunk;
-		Direction previousDirection = startChunk.GetOpenGates()[0].GateDirection;
+		Direction previousDirection = startChunk.GetOpenGates () [0].GateDirection;
 		for (int i = 0; i < trackLength; i++) {
 			//Generate a new piece that matches up with the other pieces.
 			Direction opposingDirection = previousDirection.GetOpposite ();
@@ -57,15 +57,16 @@ public class Track : MonoBehaviour
 			foreach (TrackChunk obj in trackSegmentPrefabs) {
 				if (obj.GetGateForDirection (opposingDirection) != GateSize.CLOSED) {
 					availableTrackParts.Add (obj);
+					break;
 				}
 			}
-			TrackChunk selectedTrackPart = Instantiate(availableTrackParts [Random.Range (0, availableTrackParts.Count - 1)]) as TrackChunk;
+			TrackChunk selectedTrackPart = Instantiate (availableTrackParts [Random.Range (0, availableTrackParts.Count - 1)]) as TrackChunk;
 			TrackChunk nextChunk = selectedTrackPart.GetComponent<TrackChunk> ();
 			selectedTrackPart.transform.SetParent (this.transform);
 			selectedTrackPart.name = "Track Segment " + i;
 
 			//Place chunk in world space
-			selectedTrackPart.PositionSideAtPoint(currentChunk.GetGatePosition(previousDirection),opposingDirection);
+			selectedTrackPart.PositionSideAtPoint (currentChunk.GetGatePosition (previousDirection), opposingDirection);
 
 			currentChunk = nextChunk;
 			Direction exitDirection = currentChunk.getExitDirection (opposingDirection);
@@ -73,17 +74,5 @@ public class Track : MonoBehaviour
 		}
 		endChunk.PositionSideAtPoint (currentChunk.GetGatePosition (previousDirection), endChunk.GetOpenGates () [0].GateDirection);
 		endChunk.transform.SetParent (this.transform);
-	}
-
-
-	void OnDrawGizmosSelected ()
-	{
-		
-	}
-
-	// Update is called once per frame
-	void Update ()
-	{
-	
 	}
 }
